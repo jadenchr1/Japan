@@ -159,6 +159,11 @@ footer .btn{font-size:12px;padding:4px 10px;margin:4px 6px 0 0}
 .ptog{margin:6px 0 4px}.pw.nop .pi2{display:none}.pw.nop .pgrid{grid-template-columns:1fr;gap:6px}.pw.nop .pb{padding:8px 12px}
 #pzdlg{width:min(720px,96vw);background:#fff}
 #pzdlg img{display:block;width:100%;max-height:88vh;object-fit:contain}
+.g-food{--gc:#be123c}.g-snack{--gc:#db2777}.g-street{--gc:#7f1d1d}.g-do{--gc:#7c3aed}.g-sight{--gc:#1d6fd8}.g-shop{--gc:#0f766e}.g-ssnack{--gc:#0891b2}
+@media(prefers-color-scheme:dark){.g-food{--gc:#fb7185}.g-snack{--gc:#f9a8d4}.g-street{--gc:#fca5a5}.g-do{--gc:#a78bfa}.g-sight{--gc:#60a5fa}.g-shop{--gc:#2dd4bf}.g-ssnack{--gc:#67e8f9}}
+.ty.g{color:var(--gc);border-color:var(--gc);background:color-mix(in srgb,var(--gc) 12%,transparent)}
+.chip.g{color:var(--gc);border-color:var(--gc);background:color-mix(in srgb,var(--gc) 10%,var(--cd))}
+.chip.g.on{background:var(--gc);color:var(--cd);border-color:var(--gc)}
 </style></head>
 <body>
 <header>
@@ -421,7 +426,7 @@ function delState(){if(!ESN||ST.states.length<2)return;const as=ST.areas.filter(
 
 /* ---------- Places ---------- */
 const mapUrl=p=>p.url||'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.name+', '+p.area+', '+((ST.areas.find(a=>a.n===p.area)||{}).r||'Japan'));
-const row=p=>{const o=isOpen(p.hrs);return`<div class="row"><div><a href="${esc(mapUrl(p))}" target="_blank" rel="noopener" title="Open in Google Maps">${esc(p.name)} <span class="mu">📍</span></a></div><div class="hr num">${o===null?'':`<i class="dot ${o?'on':''}" title="${o?'Open now':'Closed now'}"></i>`}${esc(p.hrs)}</div><div class="rm">${esc(p.rm)}</div><div class="rc">${p.rs?'<span class="ty rs" title="Needs a booking or timed ticket">🗓 Reserve</span>':''}${p.type?`<span class="ty">${esc(p.type)}</span>`:''}${p.line?badge(p.line):''}<button class="ib" onclick="editPlace('${p.id}')" title="Edit">✎</button></div></div>`};
+const row=p=>{const o=isOpen(p.hrs);return`<div class="row"><div><a href="${esc(mapUrl(p))}" target="_blank" rel="noopener" title="Open in Google Maps">${esc(p.name)} <span class="mu">📍</span></a></div><div class="hr num">${o===null?'':`<i class="dot ${o?'on':''}" title="${o?'Open now':'Closed now'}"></i>`}${esc(p.hrs)}</div><div class="rm">${esc(p.rm)}</div><div class="rc">${p.rs?'<span class="ty rs" title="Needs a booking or timed ticket">🗓 Reserve</span>':''}${p.type?`<span class="ty${gcls(p.type)}">${esc(p.type)}</span>`:''}${p.line?badge(p.line):''}<button class="ib" onclick="editPlace('${p.id}')" title="Edit">✎</button></div></div>`};
 function drawPlaces(){const q=S.q.toLowerCase(),fs=S.types.size>0||S.open||S.rs;let n=0;const out=[],as=stAreas();
   as.forEach(a=>{if(S.area&&a.n!==S.area)return;
    const nh=a.n.toLowerCase().includes(q),sh=a.a.concat(a.stn).some(x=>x.toLowerCase().includes(q)),lok=!S.line||a.l.includes(S.line);
@@ -429,8 +434,12 @@ function drawPlaces(){const q=S.q.toLowerCase(),fs=S.types.size>0||S.open||S.rs;
    const sights=!fs&&lok&&(!q||nh||sh);if(!shops.length&&!sights)return;n+=shops.length;
    out.push(`<details class="area" ${q||fs||S.line||S.area?'open':''}><summary><span class="an">${esc(a.n)}</span><span>${a.l.map(badge).join('')}</span><small>${shops.length?shops.length+(shops.length===1?' place':' places'):'sights'}</small><button class="ib" data-a="${esc(a.n)}" onclick="event.preventDefault();event.stopPropagation();editArea(this.dataset.a)" title="Edit this area" aria-label="Edit ${esc(a.n)}">✎</button></summary>${a.stn.length?`<div class="stn">🚉 ${a.stn.map(esc).join(' · ')}</div>`:''}${sights&&a.a.length?`<div class="sights">${a.a.map(x=>`<span>${esc(x)}</span>`).join('')}</div>`:''}${shops.map(row).join('')}</details>`)});
   $('#res').innerHTML=out.join('')||(as.length?'<p class="mu">Nothing matches. Try clearing a filter, or add it with the + button.</p>':`<p class="mu">No areas in ${esc(S.state)} yet. Tap “+ Add area” to start (for example Akihabara or Asakusa in Tokyo).</p>`);$('#cnt').textContent=n+' places listed'}
-const allTypes=()=>[...new Set(ST.places.map(p=>p.type).filter(Boolean))].sort();
-function drawChips(){$('#tchips').innerHTML=`<button class="chip ${S.open?'on':''}" onclick="S.open=!S.open;drawChips();drawPlaces()">● Open now</button><button class="chip ${S.rs?'on':''}" onclick="S.rs=!S.rs;drawChips();drawPlaces()">🗓 Reserve</button>`+allTypes().map(t=>`<button class="chip ${S.types.has(t)?'on':''}" data-t="${esc(t)}" onclick="toggleType(this.dataset.t)">${esc(t)}</button>`).join('')}
+const GRP=ty=>{const s=String(ty||'').toLowerCase();return /souvenir|shop|market|store/.test(s)?'shop':/breakfast|lunch|dinner|anytime|food|snack|cafe|café|coffee|dessert|drink|restaurant/.test(s)?'food':/experience|entertain|activity|show|game/.test(s)?'do':/attraction|sight|museum|temple|park/.test(s)?'sight':''};
+const SUB=ty=>{const s=String(ty||'').toLowerCase();return/souvenir.*snack/.test(s)?'ssnack':/street|snack/.test(s)?'snack':GRP(ty)};
+const GO={food:0,do:1,sight:2,shop:3,'':4},SO={food:0,snack:1,shop:0,ssnack:1};
+const gcls=ty=>SUB(ty)?' g g-'+SUB(ty):'';
+const allTypes=()=>[...new Set(ST.places.map(p=>p.type).filter(Boolean))].sort((a,b)=>GO[GRP(a)]-GO[GRP(b)]||(SO[SUB(a)]||0)-(SO[SUB(b)]||0)||a.localeCompare(b));
+function drawChips(){$('#tchips').innerHTML=`<button class="chip ${S.open?'on':''}" onclick="S.open=!S.open;drawChips();drawPlaces()">● Open now</button><button class="chip ${S.rs?'on':''}" onclick="S.rs=!S.rs;drawChips();drawPlaces()">🗓 Reserve</button>`+allTypes().map(t=>`<button class="chip${gcls(t)} ${S.types.has(t)?'on':''}" data-t="${esc(t)}" onclick="toggleType(this.dataset.t)">${esc(t)}</button>`).join('')}
 function toggleType(t){S.types.has(t)?S.types.delete(t):S.types.add(t);drawChips();drawPlaces()}
 const lineOpts=()=>uniq([...D.lines.map(l=>l.n),...ST.areas.flatMap(a=>a.l),...ST.places.map(p=>p.line).filter(Boolean),'Other']);
 function fillLists(){
